@@ -1,0 +1,85 @@
+#!/usr/bin/env python2
+#
+# qvarn-backend - implement all the Qvarn resources
+#
+# Copyright 2016  QvarnLabs AB
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+import os
+import yaml
+
+import qvarn
+
+
+specdir = '/etc/qvarn'
+
+
+# We want to load strings as unicode, not str.
+# From http://stackoverflow.com/questions/2890146/
+# It seems this will be unnecessary in Python 3.
+
+def construct_yaml_str(self, node):
+    # Override the default string handling function
+    # to always return unicode objects
+    if node.value == 'blob':
+        return buffer('')
+    return self.construct_scalar(node)
+
+
+yaml.SafeLoader.add_constructor(u'tag:yaml.org,2002:str', construct_yaml_str)
+
+
+def version():
+    return {
+        'api': {
+            'version': qvarn.__version__,
+        },
+        'implementation': {
+            'name': 'Qvarn',
+            'version': qvarn.__version__,
+        },
+    }
+
+
+def setup_version_resource(app):
+    vs = qvarn.VersionedStorage()
+    vs.set_resource_type(u'version')
+    app.add_versioned_storage(vs)
+
+    resource = qvarn.SimpleResource()
+    resource.set_path(u'/version', version)
+    app.add_resource(resource)
+
+
+def find_yaml_files(specdir):
+    basenames = os.listdir(specdir)
+    return [
+        os.path.join(specdir, x) for x in basenames if x.endswith('.yaml')
+    ]
+
+
+def load_yaml_specs(app, specdir):
+    yamlfiles = find_yaml_files(specdir)
+    for yamlfile in yamlfiles:
+        with open(yamlfile) as f:
+            spec = yaml.safe_load(f)
+        qvarn.add_resource_type_to_server(app, spec)
+
+
+app = qvarn.BackendApplication()
+setup_version_resource(app)
+load_yaml_specs(app, specdir)
+application = app.prepare_for_uwsgi()

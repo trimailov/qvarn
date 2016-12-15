@@ -64,12 +64,12 @@ class BackendApplication(object):
         self._app.config['autojson'] = False
 
         self._dbconn = None
-        self._vs = None
+        self._vs_list = []
         self._resources = []
         self._conf = None
 
-    def set_versioned_storage(self, versioned_storage):
-        self._vs = versioned_storage
+    def add_versioned_storage(self, versioned_storage):
+        self._vs_list.append(versioned_storage)
 
     def add_resource(self, resource):
         '''Adds a resource that this application serves.
@@ -199,7 +199,8 @@ class BackendApplication(object):
         '''Prepare the database for use.'''
         if not conf.getboolean('database', 'readonly'):
             with self._dbconn.transaction() as t:
-                self._vs.prepare_storage(t)
+                for vs in self._vs_list:
+                    vs.prepare_storage(t)
 
     def _configure_logging(self, conf):
         if conf.has_option('main', 'log'):
