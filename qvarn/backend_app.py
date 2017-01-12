@@ -96,8 +96,11 @@ class BackendApplication(object):
         for route in routes:
             self._app.route(**route)
 
-    def prepare_for_uwsgi(self):
+    def prepare_for_uwsgi(self, specdir):
         '''Prepare the application to be run by uwsgi.
+
+        Load resource type specifications from specdir, if in prepare
+        mode.
 
         Return a Bottle application that uwsgi can use. The caller
         should assign it to a global variable called "application", or
@@ -109,7 +112,7 @@ class BackendApplication(object):
         # exceptions and handle them in some useful manner.
 
         try:
-            self.run_helper()
+            self.run_helper(specdir)
         except qvarn.QvarnException as e:
             log.log('error', exc_info=True, msg_text=str(e))
             sys.stderr.write('ERROR: {}\n'.format(str(e)))
@@ -123,7 +126,7 @@ class BackendApplication(object):
         else:
             return self._app
 
-    def run_helper(self):
+    def run_helper(self, specdir):
         self._conf, args = self._parse_config()
 
         if args.prepare_storage:
@@ -131,6 +134,7 @@ class BackendApplication(object):
             self._configure_logging(self._conf)
             qvarn.log.set_context('prepare-storage')
             self._connect_to_storage(self._conf)
+            self._load_specs(specdir)
             self._prepare_storage(self._conf)
         else:
             # Logging should be the first plugin (outermost wrapper)
@@ -194,6 +198,19 @@ class BackendApplication(object):
 
         self._dbconn = qvarn.DatabaseConnection()
         self._dbconn.set_sql(sql)
+
+    def _load_specs(self, specdir):
+        yamlfiles = self._find_yaml_files(specdir)
+        for yamlfile in yamlfiles:
+            with open(yamlfile) as f:
+                spec = yaml.safe_load(f)
+            qvarn.add_resource_type_to_server(self, spec)
+
+    def _find_yaml_files(self, specdir):
+        basenames = os.listdir(specdir)
+        return [
+            os.path.join(specdir, x) for x in basenames if x.endswith('.yaml')
+        ]
 
     def _prepare_storage(self, conf):
         '''Prepare the database for use.'''
