@@ -20,10 +20,26 @@ import argparse
 import ConfigParser
 import os
 import sys
+import yaml
 
 import bottle
 
 import qvarn
+
+
+# We want to load strings as unicode, not str.
+# From http://stackoverflow.com/questions/2890146/
+# It seems this will be unnecessary in Python 3.
+
+def construct_yaml_str(self, node):
+    # Override the default string handling function
+    # to always return unicode objects
+    if node.value == 'blob':
+        return buffer('')
+    return self.construct_scalar(node)
+
+
+yaml.SafeLoader.add_constructor(u'tag:yaml.org,2002:str', construct_yaml_str)
 
 
 log = qvarn.StructuredLog()
