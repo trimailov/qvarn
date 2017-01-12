@@ -159,6 +159,7 @@ class BackendApplication(object):
             self._install_logging_plugin()
             # Error catching should also be as high as possible to catch all
             self._app.install(qvarn.ErrorTransformPlugin())
+            self._load_specs(specdir)
             self._setup_auth(self._conf)
             self._app.install(qvarn.StringToUnicodePlugin())
             # Import is here to not fail tests and is only used on uWSGI
