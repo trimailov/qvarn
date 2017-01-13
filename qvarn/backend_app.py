@@ -160,7 +160,7 @@ class BackendApplication(object):
             self._install_logging_plugin()
             # Error catching should also be as high as possible to catch all
             self._app.install(qvarn.ErrorTransformPlugin())
-            specs  self._load_specs_from_files(specdir)
+            specs = self._load_specs_from_files(specdir)
             self._add_resource_types_from_specs(specs)
             self._setup_auth(self._conf)
             self._app.install(qvarn.StringToUnicodePlugin())
