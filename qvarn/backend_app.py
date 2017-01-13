@@ -220,20 +220,26 @@ class BackendApplication(object):
         self._dbconn.set_sql(sql)
 
     def _load_specs_from_files(self, specdir):
+        qvarn.log.log(
+            'debug', msg_text='Loading specs from {!r}'.format(specdir))
         specs = []
         yamlfiles = self._find_yaml_files(specdir)
         for yamlfile in yamlfiles:
+            qvarn.log.log('debug', msg_text='Loading {!r}'.format(yamlfile))
             with open(yamlfile) as f:
                 spec = yaml.safe_load(f)
             specs.append(spec)
         return specs
 
     def _load_specs_from_db(self):
+        qvarn.log.log('debug', msg_text='Loading specs from database')
         specs = []
         rst = qvarn.ResourceTypeStorage()
         with self._dbconn.transaction() as t:
             type_names = rst.get_types(t)
             for type_name in type_names:
+                qvarn.log.log(
+                    'debug', msg_text='Loading {!r}'.format(type_name))
                 spec = rst.get_spec(t, type_name)
                 specs.append(spec)
         return specs
