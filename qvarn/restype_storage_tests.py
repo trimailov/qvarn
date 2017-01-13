@@ -16,6 +16,8 @@
 
 import unittest
 
+import yaml
+
 import qvarn
 
 
@@ -38,11 +40,12 @@ class ResourceTypeStorageTests(unittest.TestCase):
             'type': 'person',
             'blah': 'BLAH',
         }
+        spec_text = yaml.safe_dump(spec)
 
         with self.transaction() as t:
             rts = qvarn.ResourceTypeStorage()
             rts.prepare_tables(t)
-            rts.add_or_update_spec(t, spec)
+            rts.add_or_update_spec(t, spec, spec_text)
             self.assertEqual(rts.get_types(t), [spec['type']])
             self.assertEqual(rts.get_spec(t, spec['type']), spec)
 
@@ -51,15 +54,17 @@ class ResourceTypeStorageTests(unittest.TestCase):
             'type': 'person',
             'blah': 'BLAH',
         }
+        spec_v1_text = yaml.safe_dump(spec_v1)
 
         spec_v2 = spec_v1.copy()
         spec_v2['bling'] = 'blong'
+        spec_v2_text = yaml.safe_dump(spec_v2)
 
         with self.transaction() as t:
             rts = qvarn.ResourceTypeStorage()
             rts.prepare_tables(t)
-            rts.add_or_update_spec(t, spec_v1)
-            rts.add_or_update_spec(t, spec_v2)
+            rts.add_or_update_spec(t, spec_v1, spec_v1_text)
+            rts.add_or_update_spec(t, spec_v2, spec_v2_text)
             self.assertEqual(rts.get_types(t), [spec_v2['type']])
             self.assertEqual(rts.get_spec(t, spec_v2['type']), spec_v2)
 
@@ -68,10 +73,27 @@ class ResourceTypeStorageTests(unittest.TestCase):
             'type': 'person',
             'blah': 'BLAH',
         }
+        spec_text = yaml.safe_dump(spec)
 
         with self.transaction() as t:
             rts = qvarn.ResourceTypeStorage()
             rts.prepare_tables(t)
-            rts.add_or_update_spec(t, spec)
+            rts.add_or_update_spec(t, spec, spec_text)
             rts.delete_spec(t, spec[u'type'])
             self.assertEqual(rts.get_types(t), [])
+
+    def test_spec_with_blob(self):
+        text = '''\
+path: /files
+type: file
+versions:
+- prototype: {id: '', revision: '', type: '', foo: blob}
+  version: v0
+'''
+        spec = yaml.safe_load(text)
+
+        with self.transaction() as t:
+            rts = qvarn.ResourceTypeStorage()
+            rts.prepare_tables(t)
+            rts.add_or_update_spec(t, spec, text)
+            self.assertEqual(rts.get_types(t), ['file'])

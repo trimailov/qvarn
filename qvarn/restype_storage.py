@@ -30,29 +30,29 @@ class ResourceTypeStorage(object):
             }
         )
 
-    def add_or_update_spec(self, transaction, spec):
+    def add_or_update_spec(self, transaction, spec, spec_text):
         types = self.get_types(transaction)
         if spec[u'type'] in types:
-            self._update_spec(transaction, spec)
+            self._update_spec(transaction, spec, spec_text)
         else:
-            self._add_spec(transaction, spec)
+            self._add_spec(transaction, spec, spec_text)
 
-    def _add_spec(self, transaction, spec):
+    def _add_spec(self, transaction, spec, spec_text):
         transaction.insert(
             self._table_name,
             {
                 u'type': spec[u'type'],
-                u'yaml': yaml.safe_dump(spec),
+                u'yaml': spec_text,
             }
         )
 
-    def _update_spec(self, transaction, spec):
+    def _update_spec(self, transaction, spec, spec_text):
         transaction.update(
             self._table_name,
             ('=', self._table_name, u'type', spec[u'type']),
             {
                 u'type': spec[u'type'],
-                u'yaml': yaml.safe_dump(spec),
+                u'yaml': spec_text,
             }
         )
 
