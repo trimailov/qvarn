@@ -150,7 +150,8 @@ class BackendApplication(object):
             self._configure_logging(self._conf)
             qvarn.log.set_context('prepare-storage')
             self._connect_to_storage(self._conf)
-            self._load_specs(specdir)
+            specs = self._load_specs_from_files(specdir)
+            self._add_resource_types_from_specs(specs)
             self._prepare_storage(self._conf)
         else:
             # Logging should be the first plugin (outermost wrapper)
@@ -159,7 +160,8 @@ class BackendApplication(object):
             self._install_logging_plugin()
             # Error catching should also be as high as possible to catch all
             self._app.install(qvarn.ErrorTransformPlugin())
-            self._load_specs(specdir)
+            specs  self._load_specs_from_files(specdir)
+            self._add_resource_types_from_specs(specs)
             self._setup_auth(self._conf)
             self._app.install(qvarn.StringToUnicodePlugin())
             # Import is here to not fail tests and is only used on uWSGI
@@ -216,18 +218,24 @@ class BackendApplication(object):
         self._dbconn = qvarn.DatabaseConnection()
         self._dbconn.set_sql(sql)
 
-    def _load_specs(self, specdir):
+    def _load_specs_from_files(self, specdir):
+        specs = []
         yamlfiles = self._find_yaml_files(specdir)
         for yamlfile in yamlfiles:
             with open(yamlfile) as f:
                 spec = yaml.safe_load(f)
-            qvarn.add_resource_type_to_server(self, spec)
+            specs.append(spec)
+        return specs
 
     def _find_yaml_files(self, specdir):
         basenames = os.listdir(specdir)
         return [
             os.path.join(specdir, x) for x in basenames if x.endswith('.yaml')
         ]
+
+    def _add_resource_types_from_specs(self, specs):
+        for spec in specs:
+            qvarn.add_resource_type_to_server(self, spec)
 
     def _prepare_storage(self, conf):
         '''Prepare the database for use.'''
