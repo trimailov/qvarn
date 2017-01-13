@@ -146,10 +146,7 @@ class BackendApplication(object):
             self._install_logging_plugin()
             # Error catching should also be as high as possible to catch all
             self._app.install(qvarn.ErrorTransformPlugin())
-            specs = self._load_specs_from_db()
-            self._add_resource_types_from_specs(specs)
             self._setup_auth(self._conf)
-            self._app.install(qvarn.StringToUnicodePlugin())
             # Import is here to not fail tests and is only used on uWSGI
             import uwsgidecorators
             uwsgidecorators.postfork(self._uwsgi_postfork_setup)
@@ -162,6 +159,12 @@ class BackendApplication(object):
 
         '''
         self._connect_to_storage(self._conf)
+
+        specs = self._load_specs_from_db()
+        self._add_resource_types_from_specs(specs)
+        self._setup_auth(self._conf)
+        self._app.install(qvarn.StringToUnicodePlugin())
+
         routes = self._prepare_resources()
         self.add_routes(routes)
 
