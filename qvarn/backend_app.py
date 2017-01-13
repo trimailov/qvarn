@@ -151,6 +151,7 @@ class BackendApplication(object):
             qvarn.log.set_context('prepare-storage')
             self._connect_to_storage(self._conf)
             specs = self._load_specs_from_files(specdir)
+            self._store_resource_types(specs)
             self._add_resource_types_from_specs(specs)
             self._prepare_storage(self._conf)
         else:
@@ -305,6 +306,12 @@ class BackendApplication(object):
         for resource in self._resources:
             routes += resource.prepare_resource(self._dbconn)
         return routes
+
+    def _store_resource_types(self, specs):
+        rst = qvarn.ResourceTypeStorage()
+        with self._dbconn.transaction() as t:
+            for spec in specs:
+                rst.add_or_update_spec(t, spec)
 
 
 class MissingAuthorizationError(qvarn.QvarnException):
