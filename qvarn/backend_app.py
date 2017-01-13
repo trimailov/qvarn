@@ -330,6 +330,7 @@ class BackendApplication(object):
             rst.prepare_tables(t)
             for spec in specs:
                 qvarn.log.log('debug', msg_text='Storing spec', spec=spec)
+                yaml.safe_dump(spec)
                 rst.add_or_update_spec(t, spec)
 
 
