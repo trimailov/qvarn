@@ -320,6 +320,7 @@ class BackendApplication(object):
     def _store_resource_types(self, specs):
         rst = qvarn.ResourceTypeStorage()
         with self._dbconn.transaction() as t:
+            rst.prepare_tables(t)
             for spec in specs:
                 rst.add_or_update_spec(t, spec)
 
