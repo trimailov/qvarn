@@ -161,7 +161,7 @@ class BackendApplication(object):
             self._install_logging_plugin()
             # Error catching should also be as high as possible to catch all
             self._app.install(qvarn.ErrorTransformPlugin())
-            specs = self._load_specs_from_files(specdir)
+            specs = self._load_specs_from_db()
             self._add_resource_types_from_specs(specs)
             self._setup_auth(self._conf)
             self._app.install(qvarn.StringToUnicodePlugin())
@@ -226,6 +226,16 @@ class BackendApplication(object):
             with open(yamlfile) as f:
                 spec = yaml.safe_load(f)
             specs.append(spec)
+        return specs
+
+    def _load_specs_from_db(self):
+        specs = []
+        rst = qvarn.ResourceTypeStorage()
+        with self._dbconn.transaction() as t:
+            type_names = rst.get_types(t)
+            for type_name in type_names:
+                spec = rst.get_spec(t, type_name)
+                specs.append(spec)
         return specs
 
     def _find_yaml_files(self, specdir):
